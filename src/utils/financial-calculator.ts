@@ -53,6 +53,8 @@ export function validarDatosEntrada(input: CalculoFinancieroInput): ValidationRe
  *
  * La TEM es la tasa nominal anual dividida entre 12 meses y convertida a decimal.
  *
+ * IMPORTANTE: La TEM se mantiene con alta precisión (sin redondear) para cálculos intermedios.
+ *
  * @param tna - Tasa Nominal Anual en porcentaje (ej: 120 para 120%)
  * @returns Tasa Efectiva Mensual en decimal (ej: 0.10 para 10%)
  *
@@ -60,6 +62,7 @@ export function validarDatosEntrada(input: CalculoFinancieroInput): ValidationRe
  * calcularTEM(120) // returns 0.10 (10% mensual)
  */
 export function calcularTEM(tna: number): number {
+  // No redondear TEM para mantener precisión en cálculos intermedios
   return (tna / 100) / 12;
 }
 
@@ -71,9 +74,11 @@ export function calcularTEM(tna: number): number {
  *
  * Fórmula: Coeficiente = (TEM × (1 + TEM)^cuotas) / ((1 + TEM)^cuotas - 1)
  *
+ * IMPORTANTE: El coeficiente se redondea a 6 decimales para coincidir con el método Fiserv.
+ *
  * @param tem - Tasa Efectiva Mensual en decimal
  * @param cuotas - Número de cuotas
- * @returns Coeficiente de financiamiento
+ * @returns Coeficiente de financiamiento redondeado a 6 decimales
  *
  * @example
  * calcularCoeficiente(0.10, 12) // returns ~0.14676
@@ -81,13 +86,15 @@ export function calcularTEM(tna: number): number {
 export function calcularCoeficiente(tem: number, cuotas: number): number {
   // Caso especial: si la tasa es 0, el coeficiente es simplemente 1/cuotas
   if (tem === 0) {
-    return 1 / cuotas;
+    return Math.round((1 / cuotas) * 1000000) / 1000000;
   }
 
   const unoMasTEM = 1 + tem;
   const unoMasTEMElevadoCuotas = Math.pow(unoMasTEM, cuotas);
+  const coeficiente = (tem * unoMasTEMElevadoCuotas) / (unoMasTEMElevadoCuotas - 1);
 
-  return (tem * unoMasTEMElevadoCuotas) / (unoMasTEMElevadoCuotas - 1);
+  // Redondear a 6 decimales (método Fiserv)
+  return Math.round(coeficiente * 1000000) / 1000000;
 }
 
 /**
@@ -116,14 +123,18 @@ export function calcularTasaDirecta(coeficiente: number, cuotas: number): number
  *
  * Fórmula: Coef c/IVA = Coeficiente × (1 + IVA)
  *
- * @param coeficiente - Coeficiente de financiamiento sin IVA
- * @returns Coeficiente con IVA incluido
+ * IMPORTANTE: El coeficiente con IVA se redondea a 6 decimales para coincidir con el método Fiserv.
+ *
+ * @param coeficiente - Coeficiente de financiamiento sin IVA (ya redondeado a 6 decimales)
+ * @returns Coeficiente con IVA incluido redondeado a 6 decimales
  *
  * @example
  * calcularCoeficienteConIVA(0.14676) // returns ~0.17758
  */
 export function calcularCoeficienteConIVA(coeficiente: number): number {
-  return coeficiente * (1 + IVA);
+  const coeficienteConIVA = coeficiente * (1 + IVA);
+  // Redondear a 6 decimales (método Fiserv)
+  return Math.round(coeficienteConIVA * 1000000) / 1000000;
 }
 
 /**
@@ -172,43 +183,55 @@ export function calcularCFT(coeficiente: number, cuotas: number): number {
  *
  * Multiplica el importe financiado por el coeficiente.
  *
+ * IMPORTANTE: La cuota se redondea a 2 decimales para coincidir con el método Fiserv.
+ *
  * @param importe - Monto financiado
- * @param coeficiente - Coeficiente de financiamiento
- * @returns Valor de la cuota mensual
+ * @param coeficiente - Coeficiente de financiamiento (ya redondeado a 6 decimales)
+ * @returns Valor de la cuota mensual redondeada a 2 decimales
  *
  * @example
  * calcularCuota(10000, 0.14676) // returns 1467.60
  */
 export function calcularCuota(importe: number, coeficiente: number): number {
-  return importe * coeficiente;
+  const cuota = importe * coeficiente;
+  // Redondear a 2 decimales (método Fiserv)
+  return Math.round(cuota * 100) / 100;
 }
 
 /**
  * Calcula el monto total a pagar al finalizar el préstamo
  *
- * @param cuota - Valor de cada cuota
+ * IMPORTANTE: El monto total se redondea a 2 decimales para coincidir con el método Fiserv.
+ *
+ * @param cuota - Valor de cada cuota (ya redondeada a 2 decimales)
  * @param numeroCuotas - Número de cuotas
- * @returns Monto total a pagar
+ * @returns Monto total a pagar redondeado a 2 decimales
  *
  * @example
  * calcularMontoTotal(1467.60, 12) // returns 17611.20
  */
 export function calcularMontoTotal(cuota: number, numeroCuotas: number): number {
-  return cuota * numeroCuotas;
+  const montoTotal = cuota * numeroCuotas;
+  // Redondear a 2 decimales (método Fiserv)
+  return Math.round(montoTotal * 100) / 100;
 }
 
 /**
  * Calcula el interés total pagado
  *
- * @param montoTotal - Monto total a pagar
+ * IMPORTANTE: El interés total se redondea a 2 decimales para coincidir con el método Fiserv.
+ *
+ * @param montoTotal - Monto total a pagar (ya redondeado a 2 decimales)
  * @param importe - Monto original financiado
- * @returns Interés total pagado
+ * @returns Interés total pagado redondeado a 2 decimales
  *
  * @example
  * calcularInteresTotal(17611.20, 10000) // returns 7611.20
  */
 export function calcularInteresTotal(montoTotal: number, importe: number): number {
-  return montoTotal - importe;
+  const interesTotal = montoTotal - importe;
+  // Redondear a 2 decimales (método Fiserv)
+  return Math.round(interesTotal * 100) / 100;
 }
 
 /**
