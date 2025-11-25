@@ -4,7 +4,7 @@
 
 .formContainer {
   width: 100%;
-  padding: 32px;
+  padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -13,29 +13,30 @@
 .formTitle {
   color: white;
   font-weight: 600;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   text-align: center;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.5rem;
 }
 
 .formContent {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
 .inputGroup {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .label {
   color: white;
   font-weight: 500;
-  font-size: 16px;
-  min-width: 220px;
+  font-size: 14px;
+  min-width: 180px;
   text-align: right;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -59,10 +60,10 @@
 
 .input {
   flex: 1;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: none;
   outline: none;
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
   background-color: transparent;
   color: #333;
@@ -74,10 +75,10 @@
 
 .inputPrefix,
 .inputSuffix {
-  padding: 14px 12px;
+  padding: 10px 10px;
   color: #666;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 14px;
   background-color: rgba(0, 0, 0, 0.03);
   user-select: none;
 }
@@ -92,18 +93,61 @@
 
 .helperText {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 13px;
-  margin-left: 236px;
+  font-size: 11px;
+  margin-left: 192px;
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   font-style: italic;
 }
 
+.cuotasButtonGroup {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cuotasButton {
+  flex: 1;
+  min-width: 50px;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background-color: white;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: inherit;
+}
+
+.cuotasButton:hover {
+  background-color: #f5f5f5;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cuotasButtonActive {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  font-weight: 600;
+}
+
+.cuotasButtonActive:hover {
+  background-color: #45a049;
+  border-color: #45a049;
+}
+
 .calculateButton {
-  margin-top: 16px;
-  padding: 14px 28px !important;
+  margin-top: 8px;
+  padding: 10px 24px !important;
   font-weight: 600 !important;
-  font-size: 16px !important;
+  font-size: 14px !important;
   text-transform: none !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
@@ -116,57 +160,88 @@
 }
 
 .errorAlert {
-  margin-top: 16px;
+  margin-top: 8px;
   border-radius: 8px;
+  font-size: 13px;
+}
+
+.tnaResultanteBox {
+  margin-top: 4px;
+  padding: 12px 16px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tnaResultanteContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tnaResultanteLabel {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.tnaResultanteValue {
+  color: #4caf50;
+  font-size: 18px;
+  font-weight: 700;
+  background-color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
+  text-align: center;
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .formContainer {
-    padding: 24px;
+    padding: 16px;
+  }
+
+  .formTitle {
+    margin-bottom: 12px;
+    font-size: 1.25rem;
+  }
+
+  .formContent {
+    gap: 10px;
   }
 
   .inputGroup {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
   }
 
   .label {
     min-width: auto;
     text-align: left;
-    font-size: 15px;
+    font-size: 13px;
   }
 
   .helperText {
     margin-left: 0;
-    font-size: 12px;
+    font-size: 10px;
+    margin-top: 2px;
   }
 
-  .input {
-    padding: 12px 14px;
-    font-size: 15px;
+  .cuotasButtonGroup {
+    width: 100%;
   }
 
-  .inputPrefix,
-  .inputSuffix {
-    padding: 12px 10px;
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 600px) {
-  .formContainer {
-    padding: 20px;
-  }
-
-  .formTitle {
-    font-size: 1.25rem;
-    margin-bottom: 24px;
-  }
-
-  .label {
-    font-size: 14px;
+  .cuotasButton {
+    min-width: 45px;
+    padding: 8px 10px;
+    font-size: 13px;
   }
 
   .input {
@@ -180,12 +255,83 @@
     font-size: 14px;
   }
 
+  .tnaResultanteBox {
+    padding: 10px 12px;
+  }
+
+  .tnaResultanteLabel {
+    font-size: 13px;
+  }
+
+  .tnaResultanteValue {
+    font-size: 16px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .formContainer {
+    padding: 12px;
+  }
+
+  .formTitle {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+
+  .formContent {
+    gap: 8px;
+  }
+
+  .label {
+    font-size: 12px;
+  }
+
+  .input {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .inputPrefix,
+  .inputSuffix {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
   .calculateButton {
-    padding: 12px 24px !important;
-    font-size: 15px !important;
+    padding: 8px 20px !important;
+    font-size: 13px !important;
   }
 
   .helperText {
-    font-size: 11px;
+    font-size: 9px;
+    margin-top: 2px;
+  }
+
+  .cuotasButton {
+    min-width: 40px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .tnaResultanteBox {
+    padding: 8px 10px;
+  }
+
+  .tnaResultanteContent {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .tnaResultanteLabel {
+    font-size: 12px;
+  }
+
+  .tnaResultanteValue {
+    font-size: 16px;
+    width: 100%;
+    min-width: auto;
+    padding: 6px 12px;
   }
 }

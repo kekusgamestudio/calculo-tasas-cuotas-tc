@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para cálculos financieros
- * Basado en el método de cálculo Fiserv
+ * Basado en el método de cálculo Procesador
  */
 
 /**
@@ -11,8 +11,18 @@ export interface CalculoFinancieroInput {
   importe: number;
   /** Número de cuotas (meses) */
   cuotas: number;
-  /** Tasa Nominal Anual en porcentaje (ej: 120 para 120%) */
+  /** Tasa Nominal Anual publicada en porcentaje (ej: 120 para 120%) */
   tna: number;
+  /** Arancel de Procesador en porcentaje */
+  arancelProcesador?: number;
+  /** Fee de riesgo de Procesador en porcentaje */
+  feeRiesgoProcesador?: number;
+  /** Adicional de Cobrador en porcentaje */
+  adicionalCobrador?: number;
+  /** Impuestos en porcentaje */
+  impuestos?: number;
+  /** TNA Cobrador resultante (calculada automáticamente) */
+  tnaCobrador?: number;
 }
 
 /**

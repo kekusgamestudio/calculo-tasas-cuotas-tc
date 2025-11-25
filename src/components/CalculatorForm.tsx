@@ -26,6 +26,10 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
   const [importe, setImporte] = useState<string>('10000');
   const [cuotas, setCuotas] = useState<string>('12');
   const [tna, setTna] = useState<string>('120');
+  const [arancelProcesador, setArancelProcesador] = useState<string>('0');
+  const [feeRiesgoProcesador, setFeeRiesgoProcesador] = useState<string>('0');
+  const [adicionalCobrador, setAdicionalCobrador] = useState<string>('0');
+  const [impuestos, setImpuestos] = useState<string>('0');
 
   /**
    * Maneja el envío del formulario
@@ -37,7 +41,11 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
     const input: CalculoFinancieroInput = {
       importe: parseFloat(importe) || 0,
       cuotas: parseInt(cuotas) || 0,
-      tna: parseFloat(tna) || 0
+      tna: parseFloat(tna) || 0,
+      arancelProcesador: parseFloat(arancelProcesador) || 0,
+      feeRiesgoProcesador: parseFloat(feeRiesgoProcesador) || 0,
+      adicionalCobrador: parseFloat(adicionalCobrador) || 0,
+      impuestos: parseFloat(impuestos) || 0
     };
 
     onCalculate(input);
@@ -55,14 +63,10 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
   };
 
   /**
-   * Valida que solo se ingresen números enteros en el campo de cuotas
+   * Maneja la selección de cuotas desde la botonera
    */
-  const handleCuotasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Permitir solo números enteros
-    if (value === '' || /^\d+$/.test(value)) {
-      setCuotas(value);
-    }
+  const handleCuotasSelect = (cuotasValue: number) => {
+    setCuotas(cuotasValue.toString());
   };
 
   /**
@@ -76,10 +80,36 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
     }
   };
 
+  /**
+   * Valida que solo se ingresen números en los campos porcentuales
+   */
+  const handlePorcentualChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (value: string) => void
+  ) => {
+    const value = e.target.value;
+    // Permitir números decimales
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setter(value);
+    }
+  };
+
+  /**
+   * Calcula la TNA resultante en tiempo real
+   */
+  const calcularTnaResultante = (): number => {
+    const tnaValue = parseFloat(tna) || 0;
+    const arancelValue = parseFloat(arancelProcesador) || 0;
+    const feeRiesgoValue = parseFloat(feeRiesgoProcesador) || 0;
+    const adicionalValue = parseFloat(adicionalCobrador) || 0;
+    const impuestosValue = parseFloat(impuestos) || 0;
+    return tnaValue + arancelValue + feeRiesgoValue + adicionalValue + impuestosValue;
+  };
+
   return (
     <Box className={styles.formContainer}>
       <Typography variant="h5" className={styles.formTitle}>
-        Calculadora de Cuotas Fiserv
+        Calculadora de Cuotas Procesador
       </Typography>
 
       <form onSubmit={handleSubmit} className={styles.formContent}>
@@ -109,19 +139,27 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
           <label htmlFor="cuotas" className={styles.label}>
             Cantidad de Cuotas:
           </label>
-          <div className={styles.inputWrapper}>
+          <div className={styles.cuotasButtonGroup}>
+            {[1, 2, 3, 6, 9, 12, 18, 24].map((cuotasValue) => (
+              <button
+                key={cuotasValue}
+                type="button"
+                onClick={() => handleCuotasSelect(cuotasValue)}
+                className={`${styles.cuotasButton} ${
+                  cuotas === cuotasValue.toString() ? styles.cuotasButtonActive : ''
+                }`}
+              >
+                {cuotasValue}
+              </button>
+            ))}
             <input
               id="cuotas"
-              type="text"
-              inputMode="numeric"
+              type="hidden"
               value={cuotas}
-              onChange={handleCuotasChange}
               required
-              className={styles.input}
-              placeholder="12"
             />
           </div>
-          <span className={styles.helperText}>Número de cuotas mensuales</span>
+          <span className={styles.helperText}>Seleccione el número de cuotas mensuales</span>
         </div>
 
         {/* Campo de TNA */}
@@ -142,7 +180,99 @@ export function CalculatorForm({ onCalculate, errorMessage }: CalculatorFormProp
             />
             <span className={styles.inputSuffix}>%</span>
           </div>
-          <span className={styles.helperText}>Tasa nominal anual en porcentaje</span>
+          <span className={styles.helperText}>Tasa nominal anual publicada en porcentaje</span>
+        </div>
+
+        {/* Campo de Arancel de Procesador */}
+        <div className={styles.inputGroup}>
+          <label htmlFor="arancelProcesador" className={styles.label}>
+            Arancel de Procesador:
+          </label>
+          <div className={styles.inputWrapper}>
+            <input
+              id="arancelProcesador"
+              type="text"
+              inputMode="decimal"
+              value={arancelProcesador}
+              onChange={(e) => handlePorcentualChange(e, setArancelProcesador)}
+              className={styles.input}
+              placeholder="0"
+            />
+            <span className={styles.inputSuffix}>%</span>
+          </div>
+          <span className={styles.helperText}>Arancel de Procesador en porcentaje</span>
+        </div>
+
+        {/* Campo de Fee de Riesgo de Procesador */}
+        <div className={styles.inputGroup}>
+          <label htmlFor="feeRiesgoProcesador" className={styles.label}>
+            Fee de Riesgo de Procesador:
+          </label>
+          <div className={styles.inputWrapper}>
+            <input
+              id="feeRiesgoProcesador"
+              type="text"
+              inputMode="decimal"
+              value={feeRiesgoProcesador}
+              onChange={(e) => handlePorcentualChange(e, setFeeRiesgoProcesador)}
+              className={styles.input}
+              placeholder="0"
+            />
+            <span className={styles.inputSuffix}>%</span>
+          </div>
+          <span className={styles.helperText}>Fee de riesgo de Procesador en porcentaje</span>
+        </div>
+
+        {/* Campo de Adicional de Cobrador */}
+        <div className={styles.inputGroup}>
+          <label htmlFor="adicionalCobrador" className={styles.label}>
+            Adicional de Cobrador:
+          </label>
+          <div className={styles.inputWrapper}>
+            <input
+              id="adicionalCobrador"
+              type="text"
+              inputMode="decimal"
+              value={adicionalCobrador}
+              onChange={(e) => handlePorcentualChange(e, setAdicionalCobrador)}
+              className={styles.input}
+              placeholder="0"
+            />
+            <span className={styles.inputSuffix}>%</span>
+          </div>
+          <span className={styles.helperText}>Adicional de Cobrador en porcentaje</span>
+        </div>
+
+        {/* Campo de Impuestos */}
+        <div className={styles.inputGroup}>
+          <label htmlFor="impuestos" className={styles.label}>
+            Impuestos:
+          </label>
+          <div className={styles.inputWrapper}>
+            <input
+              id="impuestos"
+              type="text"
+              inputMode="decimal"
+              value={impuestos}
+              onChange={(e) => handlePorcentualChange(e, setImpuestos)}
+              className={styles.input}
+              placeholder="0"
+            />
+            <span className={styles.inputSuffix}>%</span>
+          </div>
+          <span className={styles.helperText}>Impuestos en porcentaje</span>
+        </div>
+
+        {/* Cuadro de TNA Resultante */}
+        <div className={styles.tnaResultanteBox}>
+          <div className={styles.tnaResultanteContent}>
+            <Typography className={styles.tnaResultanteLabel}>
+              TNA Resultante:
+            </Typography>
+            <Typography className={styles.tnaResultanteValue}>
+              {calcularTnaResultante().toFixed(2)}%
+            </Typography>
+          </div>
         </div>
 
         {/* Botón de Calcular */}

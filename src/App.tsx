@@ -1,6 +1,6 @@
 /**
  * Componente principal de la aplicación
- * Calculadora de Cuotas Fiserv
+ * Calculadora de Cuotas Procesador
  */
 
 import { useState } from 'react';
@@ -30,12 +30,25 @@ function App() {
       // Limpiar error previo
       setError('');
 
+      // Calcular TNA Cobrador resultante
+      const arancelProcesador = input.arancelProcesador || 0;
+      const feeRiesgoProcesador = input.feeRiesgoProcesador || 0;
+      const adicionalCobrador = input.adicionalCobrador || 0;
+      const impuestos = input.impuestos || 0;
+      const tnaCobrador = input.tna + arancelProcesador + feeRiesgoProcesador + adicionalCobrador + impuestos;
+
+      // Agregar TNA Cobrador resultante al input
+      const inputConTnaCobrador: CalculoFinancieroInput = {
+        ...input,
+        tnaCobrador
+      };
+
       // Realizar el cálculo
-      const resultado = calcularFinanciamiento(input);
+      const resultado = calcularFinanciamiento(inputConTnaCobrador);
 
       // Guardar resultados y input
       setResultados(resultado);
-      setInputUsuario(input);
+      setInputUsuario(inputConTnaCobrador);
     } catch (err) {
       // Manejar errores de validación o cálculo
       setError(err instanceof Error ? err.message : 'Error al calcular');
@@ -76,7 +89,7 @@ function App() {
               marginTop: '8px'
             }}
           >
-            Método Fiserv - Cálculo preciso de financiamiento
+            Método Procesador - Cálculo preciso de financiamiento
           </Typography>
         </Container>
       </Box>
@@ -112,7 +125,7 @@ function App() {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Calculadora de Cuotas - Método Fiserv
+            Calculadora de Cuotas - Método Procesador
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', marginTop: '4px' }}>
             Desarrollado con React + TypeScript + Material UI

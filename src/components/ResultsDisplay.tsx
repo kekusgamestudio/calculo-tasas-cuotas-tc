@@ -231,12 +231,71 @@ export function ResultsDisplay({ resultados, input }: ResultsDisplayProps) {
           </div>
           <div className={styles.summaryItem}>
             <Typography className={styles.summaryLabel}>
-              TNA Aplicada
+              TNA Publicada
             </Typography>
             <Typography className={styles.summaryValue}>
               {formatPercentage(input.tna)}
             </Typography>
           </div>
+          {input.tnaCobrador !== undefined && input.tnaCobrador !== input.tna && (
+            <>
+              {(input.arancelProcesador && input.arancelProcesador > 0) ||
+               (input.feeRiesgoProcesador && input.feeRiesgoProcesador > 0) ||
+               (input.adicionalCobrador && input.adicionalCobrador > 0) ||
+               (input.impuestos && input.impuestos > 0) ? (
+                <>
+                  {input.arancelProcesador && input.arancelProcesador > 0 && (
+                    <div className={styles.summaryItem}>
+                      <Typography className={styles.summaryLabel}>
+                        + Arancel de Procesador
+                      </Typography>
+                      <Typography className={styles.summaryValue}>
+                        {formatPercentage(input.arancelProcesador)}
+                      </Typography>
+                    </div>
+                  )}
+                  {input.feeRiesgoProcesador && input.feeRiesgoProcesador > 0 && (
+                    <div className={styles.summaryItem}>
+                      <Typography className={styles.summaryLabel}>
+                        + Fee de Riesgo de Procesador
+                      </Typography>
+                      <Typography className={styles.summaryValue}>
+                        {formatPercentage(input.feeRiesgoProcesador)}
+                      </Typography>
+                    </div>
+                  )}
+                  {input.adicionalCobrador && input.adicionalCobrador > 0 && (
+                    <div className={styles.summaryItem}>
+                      <Typography className={styles.summaryLabel}>
+                        + Adicional de Cobrador
+                      </Typography>
+                      <Typography className={styles.summaryValue}>
+                        {formatPercentage(input.adicionalCobrador)}
+                      </Typography>
+                    </div>
+                  )}
+                  {input.impuestos && input.impuestos > 0 && (
+                    <div className={styles.summaryItem}>
+                      <Typography className={styles.summaryLabel}>
+                        + Impuestos
+                      </Typography>
+                      <Typography className={styles.summaryValue}>
+                        {formatPercentage(input.impuestos)}
+                      </Typography>
+                    </div>
+                  )}
+                </>
+              ) : null}
+              <div className={styles.summaryItem}>
+                <Typography className={styles.summaryLabel} sx={{ fontWeight: 600 }}>
+                  TNA Cobrador Resultante
+                </Typography>
+                <Typography className={styles.summaryValue} sx={{ fontWeight: 600 }}>
+                  {formatPercentage(input.tnaCobrador)}
+                </Typography>
+              </div>
+            </>
+          )}
           <div className={styles.summaryItem}>
             <Typography className={styles.summaryLabel}>
               Cuota Mensual (c/IVA)

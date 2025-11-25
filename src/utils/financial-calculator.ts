@@ -1,6 +1,6 @@
 /**
  * Utilidades para cálculos financieros
- * Implementación del método Fiserv para cálculo de cuotas
+ * Implementación del método Procesador para cálculo de cuotas
  *
  * Este módulo contiene funciones puras para realizar cálculos financieros
  * relacionados con préstamos y financiamiento.
@@ -236,37 +236,40 @@ export function calcularFinanciamiento(input: CalculoFinancieroInput): Resultado
     throw new Error(validacion.errorMessage);
   }
 
-  const { importe, cuotas, tna } = input;
+  const { importe, cuotas, tna, arancelProcesador = 0, feeRiesgoProcesador = 0, adicionalCobrador = 0, impuestos = 0 } = input;
 
-  // 2. Calcular TEM (Tasa Efectiva Mensual)
-  const tem = calcularTEM(tna);
+  // 2. Calcular TNA Cobrador resultante (suma de TNA + todos los porcentajes adicionales)
+  const tnaCobrador = tna + arancelProcesador + feeRiesgoProcesador + adicionalCobrador + impuestos;
 
-  // 3. Calcular Coeficiente
+  // 3. Calcular TEM (Tasa Efectiva Mensual) usando la TNA Cobrador resultante
+  const tem = calcularTEM(tnaCobrador);
+
+  // 4. Calcular Coeficiente
   const coeficiente = calcularCoeficiente(tem, cuotas);
 
-  // 4. Calcular Tasa Directa
+  // 5. Calcular Tasa Directa
   const tasaDirecta = calcularTasaDirecta(coeficiente, cuotas);
 
-  // 5. Calcular Coeficiente con IVA
+  // 6. Calcular Coeficiente con IVA
   const coeficienteConIVA = calcularCoeficienteConIVA(coeficiente);
 
-  // 6. Calcular TEA (Tasa Efectiva Anual)
+  // 7. Calcular TEA (Tasa Efectiva Anual)
   const tea = calcularTEA(tem);
 
-  // 7. Calcular CFT (Costo Financiero Total)
+  // 8. Calcular CFT (Costo Financiero Total)
   const cft = calcularCFT(coeficiente, cuotas);
 
-  // 8. Calcular valores de cuotas y montos totales
+  // 9. Calcular valores de cuotas y montos totales
   const cuota = calcularCuota(importe, coeficiente);
   const cuotaConIVA = calcularCuota(importe, coeficienteConIVA);
   const montoTotal = calcularMontoTotal(cuota, cuotas);
   const montoTotalConIVA = calcularMontoTotal(cuotaConIVA, cuotas);
 
-  // 9. Calcular intereses totales
+  // 10. Calcular intereses totales
   const interesTotal = calcularInteresTotal(montoTotal, importe);
   const interesTotalConIVA = calcularInteresTotal(montoTotalConIVA, importe);
 
-  // 10. Retornar todos los resultados
+  // 11. Retornar todos los resultados
   return {
     coeficiente,
     tasaDirecta,
