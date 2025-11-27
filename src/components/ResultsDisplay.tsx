@@ -10,7 +10,14 @@ import {
   CardContent,
   Typography,
   Box,
-  Divider
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
 } from '@mui/material';
 import {
   AccountBalance as AccountBalanceIcon,
@@ -67,6 +74,30 @@ export function ResultsDisplay({ resultados, input }: ResultsDisplayProps) {
 
       {/* Grid de tarjetas con resultados principales */}
       <div className={styles.cardsGrid}>
+
+        {/* Tarjeta: Coeficiente */}
+        <Card className={`${styles.resultCard} ${styles.cardInfo}`} elevation={2}>
+          <Box className={styles.cardHeader}>
+            <Typography className={styles.cardTitle}>
+              <CalculateIcon fontSize="small" />
+              Coeficiente
+            </Typography>
+          </Box>
+          <CardContent className={styles.cardContent}>
+            <Typography className={styles.mainValue}>
+              {formatCoeficiente(resultados.coeficiente)}
+            </Typography>
+            <Typography className={styles.secondaryValue}>
+              Con IVA: {formatCoeficiente(resultados.coeficienteConIVA)}
+            </Typography>
+            <Typography className={styles.description}>
+              Factor que multiplica el importe para obtener la cuota
+            </Typography>
+          </CardContent>
+        </Card>
+
+
+
         {/* Tarjeta: Cuota Mensual */}
         <Card className={`${styles.resultCard} ${styles.cardPrimary}`} elevation={2}>
           <Box className={styles.cardHeader}>
@@ -126,27 +157,6 @@ export function ResultsDisplay({ resultados, input }: ResultsDisplayProps) {
             </Typography>
             <Typography className={styles.description}>
               Diferencia entre lo que pagas y lo que solicitaste
-            </Typography>
-          </CardContent>
-        </Card>
-
-        {/* Tarjeta: Coeficiente */}
-        <Card className={`${styles.resultCard} ${styles.cardInfo}`} elevation={2}>
-          <Box className={styles.cardHeader}>
-            <Typography className={styles.cardTitle}>
-              <CalculateIcon fontSize="small" />
-              Coeficiente
-            </Typography>
-          </Box>
-          <CardContent className={styles.cardContent}>
-            <Typography className={styles.mainValue}>
-              {formatCoeficiente(resultados.coeficiente)}
-            </Typography>
-            <Typography className={styles.secondaryValue}>
-              Con IVA: {formatCoeficiente(resultados.coeficienteConIVA)}
-            </Typography>
-            <Typography className={styles.description}>
-              Factor que multiplica el importe para obtener la cuota
             </Typography>
           </CardContent>
         </Card>
@@ -306,6 +316,64 @@ export function ResultsDisplay({ resultados, input }: ResultsDisplayProps) {
           </div>
         </div>
       </Box>
+
+      {/* Tabla de Detalles por Cuota */}
+      {resultados.detallesPorCuota && resultados.detallesPorCuota.length > 0 && (
+        <Box className={styles.summarySection} sx={{ marginTop: '32px' }}>
+          <Typography className={styles.summaryTitle}>
+            Detalles por Cuota
+          </Typography>
+          <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', marginBottom: '20px' }} />
+          <TableContainer 
+            component={Paper} 
+            sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              maxHeight: '600px',
+              overflowX: 'auto'
+            }}
+            className={styles.tableContainer}
+          >
+            <Table sx={{ minWidth: 800 }} size="small" stickyHeader>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
+                  <TableCell sx={{ fontWeight: 600 }}>Cuota</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Importe</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>TNA Resultante</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Cuota</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Coeficiente</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Coef. c/IVA</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>TEA</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>CFT</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Tasa Directa</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {resultados.detallesPorCuota.map((detalle) => (
+                  <TableRow
+                    key={detalle.numeroCuota}
+                    sx={{
+                      '&:nth-of-type(odd)': { backgroundColor: 'rgba(0, 0, 0, 0.02)' },
+                      '&:hover': { backgroundColor: 'rgba(102, 126, 234, 0.05)' }
+                    }}
+                  >
+                    <TableCell component="th" scope="row" sx={{ fontWeight: 500 }}>
+                      {detalle.numeroCuota}
+                    </TableCell>
+                    <TableCell align="right">{formatCurrency(detalle.importe)}</TableCell>
+                    <TableCell align="right">{formatPercentage(detalle.tnaResultante)}</TableCell>
+                    <TableCell align="right">{formatCurrency(detalle.cuota)}</TableCell>
+                    <TableCell align="right">{formatCoeficiente(detalle.coeficiente)}</TableCell>
+                    <TableCell align="right">{formatCoeficiente(detalle.coeficienteConIVA)}</TableCell>
+                    <TableCell align="right">{formatPercentage(detalle.tea)}</TableCell>
+                    <TableCell align="right">{formatPercentage(detalle.cft)}</TableCell>
+                    <TableCell align="right">{formatPercentage(detalle.tasaDirecta)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </Box>
   );
 }

@@ -197,3 +197,15 @@
     padding: 16px;
   }
 }
+
+/* Estilos para la tabla de detalles por cuota */
+.tableContainer {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .tableContainer {
+    font-size: 0.75rem;
+  }
+}

@@ -9,7 +9,8 @@
 import type {
   CalculoFinancieroInput,
   ResultadoCalculos,
-  ValidationResult
+  ValidationResult,
+  DetalleCuota
 } from '../types/financial.types';
 
 /**
@@ -49,11 +50,110 @@ export function validarDatosEntrada(input: CalculoFinancieroInput): ValidationRe
 }
 
 /**
+ * Calcula el coeficiente de descuento para una cuota específica según la fórmula del método Procesador
+ *
+ * Esta función implementa la fórmula de la imagen:
+ * - Primera cuota (i=1): Coeficiente = 1 / (1 + (TNA × 28 / 360))
+ * - Siguientes cuotas (i>1): Coeficiente = 1 / ((1 + (TNA × 28 / 360)) × (1 + (TNA × 30 / 360))^(i-1))
+ *
+ * @param tna - Tasa Nominal Anual en porcentaje (ej: 50 para 50%)
+ * @param numeroCuota - Número de cuota (1 para primera, 2, 3, etc. para siguientes)
+ * @returns Coeficiente de descuento para la cuota específica
+ *
+ * @example
+ * calcularCoeficienteCuota(50, 1) // Primera cuota (28 días)
+ * calcularCoeficienteCuota(50, 2) // Segunda cuota (30 días)
+ */
+export function calcularCoeficienteCuota(tna: number, numeroCuota: number): number {
+  // Convertir TNA de porcentaje a decimal
+  const tnaDecimal = tna / 100;
+  
+  // Factor para 28 días (primera cuota)
+  const factor28Dias = 1 + (tnaDecimal * 28 / 360);
+  
+  // Si es la primera cuota (i=1)
+  if (numeroCuota === 1) {
+    return 1 / factor28Dias;
+  }
+  
+  // Para siguientes cuotas (i>1)
+  // Factor para 30 días
+  const factor30Dias = 1 + (tnaDecimal * 30 / 360);
+  
+  // Calcular: 1 / ((1 + (TNA × 28 / 360)) × (1 + (TNA × 30 / 360))^(i-1))
+  const exponente = numeroCuota - 1;
+  const factor30Elevado = Math.pow(factor30Dias, exponente);
+  
+  return 1 / (factor28Dias * factor30Elevado);
+}
+
+/**
+ * Calcula el Costo Financiero según la fórmula del método Procesador
+ *
+ * Fórmula: Costo Financiero = Valor Neto del Arancel × (1 - (1 / Cuotas Plan) × Σ[from i=1 to cuotas plan] (1 / ((1 + (TNA × 28 / 360)) × (1 + (TNA × 30 / 360))^(i-1))))
+ *
+ * @param valorNetoArancel - Valor Neto del Arancel (importe financiado)
+ * @param cuotasPlan - Número de cuotas del plan
+ * @param tna - Tasa Nominal Anual en porcentaje (debe ser la TNA resultante con todos los fees)
+ * @returns Costo Financiero calculado
+ *
+ * @example
+ * calcularCostoFinanciero(10000, 3, 50) // Calcula el costo financiero para 3 cuotas con TNA 50%
+ */
+export function calcularCostoFinanciero(valorNetoArancel: number, cuotasPlan: number, tna: number): number {
+  // Calcular la suma de coeficientes (Σ)
+  let sumaCoeficientes = 0;
+  
+  for (let i = 1; i <= cuotasPlan; i++) {
+    const coeficiente = calcularCoeficienteCuota(tna, i);
+    sumaCoeficientes += coeficiente;
+  }
+  
+  // Calcular el factor: (1 / Cuotas Plan) × Σ[coeficientes]
+  const factorDescuento = (1 / cuotasPlan) * sumaCoeficientes;
+  
+  // Calcular Costo Financiero
+  const costoFinanciero = valorNetoArancel * (1 - factorDescuento);
+  
+  return costoFinanciero;
+}
+
+/**
+ * Calcula el coeficiente promedio de financiamiento basado en la fórmula del método Procesador
+ *
+ * Este coeficiente se calcula como el promedio de los coeficientes de descuento de todas las cuotas,
+ * y se usa para calcular el valor de cada cuota.
+ *
+ * @param tna - Tasa Nominal Anual en porcentaje (debe ser la TNA resultante con todos los fees)
+ * @param cuotas - Número de cuotas
+ * @returns Coeficiente promedio redondeado a 6 decimales
+ *
+ * @example
+ * calcularCoeficientePromedio(50, 3) // Calcula el coeficiente promedio para 3 cuotas
+ */
+export function calcularCoeficientePromedio(tna: number, cuotas: number): number {
+  // Calcular la suma de coeficientes
+  let sumaCoeficientes = 0;
+  
+  for (let i = 1; i <= cuotas; i++) {
+    sumaCoeficientes += calcularCoeficienteCuota(tna, i);
+  }
+  
+  // El coeficiente promedio es la inversa del promedio de coeficientes de descuento
+  // Para obtener el coeficiente de financiamiento, necesitamos calcular:
+  // Coeficiente = 1 / (promedio de coeficientes de descuento)
+  const promedioCoeficientesDescuento = sumaCoeficientes / cuotas;
+  const coeficiente = 1 / promedioCoeficientesDescuento;
+  
+  // Redondear a 6 decimales
+  return Math.round(coeficiente * 1000000) / 1000000;
+}
+
+/**
  * Calcula la Tasa Efectiva Mensual (TEM) a partir de la TNA
  *
- * La TEM es la tasa nominal anual dividida entre 12 meses y convertida a decimal.
- *
- * IMPORTANTE: La TEM se mantiene con alta precisión (sin redondear) para cálculos intermedios.
+ * NOTA: Esta función se mantiene para compatibilidad, pero el método Procesador
+ * utiliza cálculos basados en días (28 y 30 días) en lugar de meses.
  *
  * @param tna - Tasa Nominal Anual en porcentaje (ej: 120 para 120%)
  * @returns Tasa Efectiva Mensual en decimal (ej: 0.10 para 10%)
@@ -67,34 +167,29 @@ export function calcularTEM(tna: number): number {
 }
 
 /**
- * Calcula el coeficiente de financiamiento
+ * Calcula el coeficiente de financiamiento según el método Procesador
  *
  * El coeficiente es el factor que se multiplica por el monto financiado
- * para obtener el valor de cada cuota mensual.
+ * para obtener el valor de cada cuota. Se calcula usando la fórmula del método Procesador
+ * basada en períodos de 28 y 30 días.
  *
- * Fórmula: Coeficiente = (TEM × (1 + TEM)^cuotas) / ((1 + TEM)^cuotas - 1)
+ * IMPORTANTE: El coeficiente se redondea a 6 decimales.
  *
- * IMPORTANTE: El coeficiente se redondea a 6 decimales para coincidir con el método Fiserv.
- *
- * @param tem - Tasa Efectiva Mensual en decimal
+ * @param tna - Tasa Nominal Anual en porcentaje (debe ser la TNA resultante con todos los fees)
  * @param cuotas - Número de cuotas
  * @returns Coeficiente de financiamiento redondeado a 6 decimales
  *
  * @example
- * calcularCoeficiente(0.10, 12) // returns ~0.14676
+ * calcularCoeficiente(50, 3) // Calcula el coeficiente para 3 cuotas con TNA 50%
  */
-export function calcularCoeficiente(tem: number, cuotas: number): number {
+export function calcularCoeficiente(tna: number, cuotas: number): number {
   // Caso especial: si la tasa es 0, el coeficiente es simplemente 1/cuotas
-  if (tem === 0) {
+  if (tna === 0) {
     return Math.round((1 / cuotas) * 1000000) / 1000000;
   }
 
-  const unoMasTEM = 1 + tem;
-  const unoMasTEMElevadoCuotas = Math.pow(unoMasTEM, cuotas);
-  const coeficiente = (tem * unoMasTEMElevadoCuotas) / (unoMasTEMElevadoCuotas - 1);
-
-  // Redondear a 6 decimales (método Fiserv)
-  return Math.round(coeficiente * 1000000) / 1000000;
+  // Usar el método Procesador basado en días (28 y 30 días)
+  return calcularCoeficientePromedio(tna, cuotas);
 }
 
 /**
@@ -138,44 +233,63 @@ export function calcularCoeficienteConIVA(coeficiente: number): number {
 }
 
 /**
- * Calcula la Tasa Efectiva Anual (TEA)
+ * Calcula la Tasa Efectiva Anual (TEA) según el método Procesador
  *
- * La TEA es la tasa anual equivalente considerando la capitalización mensual.
- * Representa el verdadero costo anual del crédito.
+ * La TEA se calcula basándose en el costo financiero total y el número de cuotas.
+ * Para el método Procesador, se anualiza considerando los períodos de 28 y 30 días.
  *
- * Fórmula: TEA = ((1 + TEM)^12 - 1) × 100
- *
- * @param tem - Tasa Efectiva Mensual en decimal
+ * @param importe - Monto financiado
+ * @param cuotas - Número de cuotas
+ * @param tna - Tasa Nominal Anual en porcentaje (debe ser la TNA resultante con todos los fees)
  * @returns Tasa Efectiva Anual en porcentaje
  *
  * @example
- * calcularTEA(0.10) // returns ~213.84%
+ * calcularTEA(10000, 3, 50) // Calcula la TEA para 3 cuotas con TNA 50%
  */
-export function calcularTEA(tem: number): number {
-  return (Math.pow(1 + tem, 12) - 1) * 100;
+export function calcularTEA(importe: number, cuotas: number, tna: number): number {
+  // Calcular el CFT (que ya incluye la anualización implícita)
+  const cft = calcularCFT(importe, cuotas, tna);
+  
+  // Para el método Procesador, la TEA puede aproximarse al CFT
+  // o calcularse considerando los períodos de días
+  // Aproximación: TEA ≈ CFT para períodos cortos
+  // Para mayor precisión, se puede calcular considerando los días exactos
+  const costoFinanciero = calcularCostoFinanciero(importe, cuotas, tna);
+  const montoTotal = importe + costoFinanciero;
+  
+  // Calcular días totales: 28 días (primera) + 30 días × (cuotas - 1)
+  const diasTotales = 28 + (30 * (cuotas - 1));
+  const años = diasTotales / 360;
+  
+  // TEA = ((Monto Total / Importe)^(1/años) - 1) × 100
+  if (años > 0 && importe > 0) {
+    const tea = (Math.pow(montoTotal / importe, 1 / años) - 1) * 100;
+    return tea;
+  }
+  
+  return cft;
 }
 
 /**
- * Calcula el Costo Financiero Total (CFT)
+ * Calcula el Costo Financiero Total (CFT) según el método Procesador
  *
- * El CFT es el costo total del crédito expresado como tasa anual,
- * incluyendo todos los costos (intereses, comisiones, seguros, etc.).
- * Permite comparar diferentes opciones de financiamiento.
+ * El CFT se calcula como el costo financiero total expresado como porcentaje
+ * del importe financiado, basado en la fórmula del método Procesador.
  *
- * Fórmula: CFT = ((Coeficiente × cuotas)^(12/cuotas) - 1) × 100
- *
- * @param coeficiente - Coeficiente de financiamiento
+ * @param importe - Monto financiado (Valor Neto del Arancel)
  * @param cuotas - Número de cuotas
+ * @param tna - Tasa Nominal Anual en porcentaje (debe ser la TNA resultante con todos los fees)
  * @returns Costo Financiero Total en porcentaje
  *
  * @example
- * calcularCFT(0.14676, 12) // returns ~213.84%
+ * calcularCFT(10000, 3, 50) // Calcula el CFT para 3 cuotas con TNA 50%
  */
-export function calcularCFT(coeficiente: number, cuotas: number): number {
-  const coeficientePorCuotas = coeficiente * cuotas;
-  const exponenteCFT = 12 / cuotas;
-
-  return (Math.pow(coeficientePorCuotas, exponenteCFT) - 1) * 100;
+export function calcularCFT(importe: number, cuotas: number, tna: number): number {
+  // Calcular el costo financiero según la fórmula del método Procesador
+  const costoFinanciero = calcularCostoFinanciero(importe, cuotas, tna);
+  
+  // Convertir a porcentaje del importe
+  return (costoFinanciero / importe) * 100;
 }
 
 /**
@@ -235,22 +349,71 @@ export function calcularInteresTotal(montoTotal: number, importe: number): numbe
 }
 
 /**
- * Función principal que realiza todos los cálculos financieros
+ * Calcula los detalles de cálculos para cada cuota individual
  *
- * Esta función orquesta todas las funciones de cálculo individuales
- * para generar un resultado completo con todos los valores financieros.
+ * Esta función genera un array con los detalles de cada cuota, incluyendo
+ * el coeficiente específico de cada una según la fórmula del método Procesador.
  *
- * @param input - Parámetros de entrada (importe, cuotas, tna)
+ * @param importe - Monto financiado
+ * @param cuotas - Número de cuotas
+ * @param tnaCobrador - TNA resultante (suma de TNA + todos los fees)
+ * @param coeficientePromedio - Coeficiente promedio usado para calcular la cuota
+ * @param tea - Tasa Efectiva Anual
+ * @param cft - Costo Financiero Total
+ * @param tasaDirecta - Tasa Directa
+ * @returns Array con los detalles de cada cuota
+ */
+export function calcularDetallesPorCuota(
+  importe: number,
+  cuotas: number,
+  tnaCobrador: number,
+  coeficientePromedio: number,
+  tea: number,
+  cft: number,
+  tasaDirecta: number
+): DetalleCuota[] {
+  const detalles: DetalleCuota[] = [];
+  const cuota = calcularCuota(importe, coeficientePromedio);
+
+  for (let i = 1; i <= cuotas; i++) {
+    // Calcular el coeficiente específico de esta cuota según la fórmula
+    const coeficienteCuota = calcularCoeficienteCuota(tnaCobrador, i);
+    const coeficienteCuotaConIVA = calcularCoeficienteConIVA(coeficienteCuota);
+
+    detalles.push({
+      numeroCuota: i,
+      importe,
+      tnaResultante: tnaCobrador,
+      cuota, // Todas las cuotas tienen el mismo valor
+      coeficiente: Math.round(coeficienteCuota * 1000000) / 1000000, // Redondear a 6 decimales
+      coeficienteConIVA: Math.round(coeficienteCuotaConIVA * 1000000) / 1000000,
+      tea,
+      cft,
+      tasaDirecta
+    });
+  }
+
+  return detalles;
+}
+
+/**
+ * Función principal que realiza todos los cálculos financieros según el método Procesador
+ *
+ * Esta función implementa la fórmula del método Procesador basada en períodos de 28 y 30 días.
+ * Utiliza la TNA resultante (suma de TNA + todos los fees y aranceles) para los cálculos.
+ *
+ * @param input - Parámetros de entrada (importe, cuotas, tna, y opcionalmente fees y aranceles)
  * @returns Objeto con todos los resultados calculados
  * @throws Error si los datos de entrada no son válidos
  *
  * @example
  * calcularFinanciamiento({
  *   importe: 10000,
- *   cuotas: 12,
- *   tna: 120
+ *   cuotas: 3,
+ *   tna: 50,
+ *   arancelProcesador: 5
  * })
- * // returns ResultadoCalculos con todos los valores calculados
+ * // returns ResultadoCalculos con todos los valores calculados usando el método Procesador
  */
 export function calcularFinanciamiento(input: CalculoFinancieroInput): ResultadoCalculos {
   // 1. Validar datos de entrada
@@ -262,35 +425,44 @@ export function calcularFinanciamiento(input: CalculoFinancieroInput): Resultado
   const { importe, cuotas, tna, arancelProcesador = 0, feeRiesgoProcesador = 0, adicionalCobrador = 0, impuestos = 0 } = input;
 
   // 2. Calcular TNA Cobrador resultante (suma de TNA + todos los porcentajes adicionales)
+  // Esta es la TNA que se usa en la fórmula de la imagen
   const tnaCobrador = tna + arancelProcesador + feeRiesgoProcesador + adicionalCobrador + impuestos;
 
-  // 3. Calcular TEM (Tasa Efectiva Mensual) usando la TNA Cobrador resultante
-  const tem = calcularTEM(tnaCobrador);
+  // 3. Calcular Coeficiente usando el método Procesador (basado en 28 y 30 días)
+  const coeficiente = calcularCoeficiente(tnaCobrador, cuotas);
 
-  // 4. Calcular Coeficiente
-  const coeficiente = calcularCoeficiente(tem, cuotas);
-
-  // 5. Calcular Tasa Directa
+  // 4. Calcular Tasa Directa
   const tasaDirecta = calcularTasaDirecta(coeficiente, cuotas);
 
-  // 6. Calcular Coeficiente con IVA
+  // 5. Calcular Coeficiente con IVA
   const coeficienteConIVA = calcularCoeficienteConIVA(coeficiente);
 
-  // 7. Calcular TEA (Tasa Efectiva Anual)
-  const tea = calcularTEA(tem);
+  // 6. Calcular TEA (Tasa Efectiva Anual) usando el método Procesador
+  const tea = calcularTEA(importe, cuotas, tnaCobrador);
 
-  // 8. Calcular CFT (Costo Financiero Total)
-  const cft = calcularCFT(coeficiente, cuotas);
+  // 7. Calcular CFT (Costo Financiero Total) usando el método Procesador
+  const cft = calcularCFT(importe, cuotas, tnaCobrador);
 
-  // 9. Calcular valores de cuotas y montos totales
+  // 8. Calcular valores de cuotas y montos totales
   const cuota = calcularCuota(importe, coeficiente);
   const cuotaConIVA = calcularCuota(importe, coeficienteConIVA);
   const montoTotal = calcularMontoTotal(cuota, cuotas);
   const montoTotalConIVA = calcularMontoTotal(cuotaConIVA, cuotas);
 
-  // 10. Calcular intereses totales
+  // 9. Calcular intereses totales
   const interesTotal = calcularInteresTotal(montoTotal, importe);
   const interesTotalConIVA = calcularInteresTotal(montoTotalConIVA, importe);
+
+  // 10. Calcular detalles por cuota
+  const detallesPorCuota = calcularDetallesPorCuota(
+    importe,
+    cuotas,
+    tnaCobrador,
+    coeficiente,
+    tea,
+    cft,
+    tasaDirecta
+  );
 
   // 11. Retornar todos los resultados
   return {
@@ -304,6 +476,7 @@ export function calcularFinanciamiento(input: CalculoFinancieroInput): Resultado
     montoTotal,
     montoTotalConIVA,
     interesTotal,
-    interesTotalConIVA
+    interesTotalConIVA,
+    detallesPorCuota
   };
 }

@@ -26,6 +26,30 @@ export interface CalculoFinancieroInput {
 }
 
 /**
+ * Detalle de cálculos para una cuota específica
+ */
+export interface DetalleCuota {
+  /** Número de cuota (1, 2, 3, etc.) */
+  numeroCuota: number;
+  /** Importe financiado (mismo para todas las cuotas) */
+  importe: number;
+  /** TNA resultante utilizada en el cálculo */
+  tnaResultante: number;
+  /** Valor de la cuota */
+  cuota: number;
+  /** Coeficiente específico de esta cuota según la fórmula del método Procesador */
+  coeficiente: number;
+  /** Coeficiente con IVA */
+  coeficienteConIVA: number;
+  /** Tasa Efectiva Anual (%) */
+  tea: number;
+  /** Costo Financiero Total (%) */
+  cft: number;
+  /** Tasa Directa (%) */
+  tasaDirecta: number;
+}
+
+/**
  * Resultado completo de los cálculos financieros
  */
 export interface ResultadoCalculos {
@@ -51,6 +75,8 @@ export interface ResultadoCalculos {
   interesTotal: number;
   /** Interés total pagado con IVA */
   interesTotalConIVA: number;
+  /** Detalles de cálculos por cada cuota */
+  detallesPorCuota: DetalleCuota[];
 }
 
 /**
